@@ -1,0 +1,68 @@
+version: 2.1
+orbs:
+  sk: wob-adarga/secret-key-orb@1.0.0
+  snyk: snyk/snyk@0.0.13
+
+jobs:
+  test_build:
+    docker:
+      - image: circleci/golang:1.16
+    working_directory: /go/src/github.com/btrace-baader/kafka-topic-operator
+
+    steps:
+      - checkout
+      # - sk/setup-git-keys:
+      #     gpg-key: $BUILD_SERVICES_GPG_KEY
+      #     ssh-cert: $CERTIFIED_SSH_CERT
+      #     ssh-key: $CERTIFIED_SSH_KEY
+      # - run: go version
+      # - run: go get -v -t -d ./...
+      # - run: go test -v ./...
+      # - run: CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o ./bin/ingst-document-reingestion-job
+      - run: make test
+      - snyk/scan:
+          project: '${CIRCLE_PROJECT_REPONAME}/${CIRCLE_BRANCH}-go'
+          fail-on-issues: true
+          severity-threshold: high
+          monitor-on-build: true
+          organization: adarga
+      - setup_remote_docker:
+          version: 20.10.2
+      - run: curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && unzip awscliv2.zip && ./aws/install -i ~/.local/aws-cli -b ~/.local/bin
+      - run: aws ecr get-login-password | docker login --username AWS --password-stdin $AWS_ECR_ACCOUNT_URL
+      - run: IMG=$AWS_ECR_ACCOUNT_URL/adarga/$CIRCLE_PROJECT_REPONAME:$CIRCLE_SHA1 make docker-build
+      - snyk/scan:
+          docker-image-name: '$AWS_ECR_ACCOUNT_URL/adarga/$CIRCLE_PROJECT_REPONAME:$CIRCLE_SHA1'
+          fail-on-issues: false
+          monitor-on-build: true
+          project: '${CIRCLE_PROJECT_REPONAME}/${CIRCLE_BRANCH}-docker'
+          severity-threshold: high
+          organization: adarga
+      - run: IMG=$AWS_ECR_ACCOUNT_URL/adarga/$CIRCLE_PROJECT_REPONAME:$CIRCLE_SHA1 make docker-push
+
+  tag_promote:
+    docker:
+      - image: circleci/golang:1.16
+    working_directory: /go/src/github.com/Adarga-Ltd/ingst-document-reingestion-job
+
+    steps:
+      - checkout
+      - setup_remote_docker:
+          version: 20.10.2
+      - run: docker tag $AWS_ECR_ACCOUNT_URL/adarga/$CIRCLE_PROJECT_REPONAME:$CIRCLE_SHA1 $AWS_ECR_ACCOUNT_URL/adarga/$CIRCLE_PROJECT_REPONAME:latest
+      - run: docker push $AWS_ECR_ACCOUNT_URL/adarga/$CIRCLE_PROJECT_REPONAME:latest
+
+workflows:
+  version: 2
+  test_build_scan_push:
+    jobs:
+      - test_build:
+          context:
+            - adarga-global
+            - adarga-operations-ecr
+            - github-cd
+      - tag_promote:
+          filters:
+            branches:
+              only:
+                - main
