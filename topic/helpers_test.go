@@ -1,11 +1,21 @@
 package topic
 
 import (
+	"os"
 	"testing"
 
+	stdlog "log"
+
 	"github.com/btrace-baader/kafka-topic-operator/api/v1alpha1"
+	"github.com/go-logr/logr"
+	"github.com/go-logr/stdr"
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+func createTestLogger() logr.Logger {
+	log := stdr.New(stdlog.New(os.Stderr, "", stdlog.LstdFlags))
+	return log.WithName("helpers_test.go")
+}
 
 func TestConnectionConfig(t *testing.T) {
 	Convey("Test connection config", t, func() {
@@ -19,7 +29,7 @@ func TestConnectionConfig(t *testing.T) {
 					Config:           nil,
 				},
 			}
-			client := KafkaClient{}
+			client := KafkaClient{Log: createTestLogger()}
 			config := client.connectionConfig(&kc)
 			So(config.Net.SASL.Enable, ShouldEqual, true)
 			So(config.Net.SASL.User, ShouldEqual, "user-1")
@@ -36,7 +46,7 @@ func TestConnectionConfig(t *testing.T) {
 					Config:           nil,
 				},
 			}
-			client := KafkaClient{}
+			client := KafkaClient{Log: createTestLogger()}
 			config := client.connectionConfig(&kc)
 			So(config.Net.SASL.Enable, ShouldEqual, true)
 			So(config.Net.SASL.User, ShouldEqual, "user-1")
@@ -54,7 +64,7 @@ func TestConnectionConfig(t *testing.T) {
 						Config:           nil,
 					},
 				}
-				client := KafkaClient{}
+				client := KafkaClient{Log: createTestLogger()}
 				config := client.connectionConfig(&kc)
 				So(config.Net.SASL.Enable, ShouldEqual, false)
 			})
@@ -68,7 +78,7 @@ func TestConnectionConfig(t *testing.T) {
 						Config:           nil,
 					},
 				}
-				client := KafkaClient{}
+				client := KafkaClient{Log: createTestLogger()}
 				config := client.connectionConfig(&kc)
 				So(config.Net.SASL.Enable, ShouldEqual, false)
 			})
