@@ -75,14 +75,13 @@ workflows:
       - test:
           context:
             - adarga-global
-            - adarga-operations-ecr
-            # - github-cd
       - build:
           context:
             - adarga-global
             - adarga-operations-ecr
-            # - github-cd
       - tag_promote:
+          context:
+            - adarga-operations-ecr
           requires:
             - build
           filters:
