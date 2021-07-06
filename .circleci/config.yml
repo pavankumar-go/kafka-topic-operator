@@ -30,7 +30,7 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker:
-          version: 20.10.2
+          docker_layer_caching: true
       - run:
           name: Install AWS CLI
           command: curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && unzip awscliv2.zip && ./aws/install -i ~/.local/aws-cli -b ~/.local/bin
@@ -60,7 +60,7 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker:
-          version: 20.10.2
+          docker_layer_caching: true
       - run:
           name: Docker Tag as latest
           command: docker tag $AWS_ECR_ACCOUNT_URL/adarga/$CIRCLE_PROJECT_REPONAME:$CIRCLE_SHA1 $AWS_ECR_ACCOUNT_URL/adarga/$CIRCLE_PROJECT_REPONAME:latest
