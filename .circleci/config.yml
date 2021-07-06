@@ -3,12 +3,15 @@ orbs:
   sk: wob-adarga/secret-key-orb@1.0.0
   snyk: snyk/snyk@0.1.0
 
-jobs:
-  test:
+executors:
+  default:
     docker:
       - image: circleci/golang:1.16
     working_directory: /go/src/github.com/btrace-baader/kafka-topic-operator
 
+jobs:
+  test:
+    executor: default
     steps:
       - checkout
       - run:
@@ -23,10 +26,7 @@ jobs:
           organization: adarga
 
   build:
-    docker:
-      - image: circleci/golang:1.16
-    working_directory: /go/src/github.com/btrace-baader/kafka-topic-operator
-
+    executor: default
     steps:
       - checkout
       - setup_remote_docker:
@@ -53,10 +53,7 @@ jobs:
           command: IMG=$AWS_ECR_ACCOUNT_URL/adarga/$CIRCLE_PROJECT_REPONAME:$CIRCLE_SHA1 make docker-push
 
   tag_promote:
-    docker:
-      - image: circleci/golang:1.16
-    working_directory: /go/src/github.com/Adarga-Ltd/ingst-document-reingestion-job
-
+    executor: default
     steps:
       - checkout
       - setup_remote_docker:
