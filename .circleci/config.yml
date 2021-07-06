@@ -11,9 +11,12 @@ jobs:
 
     steps:
       - checkout
-      - run: make test
+      - run:
+          name: Run Golang tests
+          command: make test
       - snyk/scan:
-          project: '${CIRCLE_PROJECT_REPONAME}/${CIRCLE_BRANCH}-go'
+          project: '${CIRCLE_PROJECT_REPONAME}'
+          additional-arguments: "--remote-repo-url=https://github.com/Adarga-Ltd/kafka-topic-operator"
           fail-on-issues: true
           monitor-on-build: true
           severity-threshold: high
@@ -28,18 +31,26 @@ jobs:
       - checkout
       - setup_remote_docker:
           version: 20.10.2
-      - run: curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && unzip awscliv2.zip && ./aws/install -i ~/.local/aws-cli -b ~/.local/bin
-      - run: aws ecr get-login-password | docker login --username AWS --password-stdin $AWS_ECR_ACCOUNT_URL
-      - run: IMG=$AWS_ECR_ACCOUNT_URL/adarga/$CIRCLE_PROJECT_REPONAME:$CIRCLE_SHA1 make docker-build
+      - run:
+          name: Install AWS CLI
+          command: curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && unzip awscliv2.zip && ./aws/install -i ~/.local/aws-cli -b ~/.local/bin
+      - run:
+          name: Login to ECR
+          command: aws ecr get-login-password | docker login --username AWS --password-stdin $AWS_ECR_ACCOUNT_URL
+      - run:
+          name: Docker Build commit tag
+          command: IMG=$AWS_ECR_ACCOUNT_URL/adarga/$CIRCLE_PROJECT_REPONAME:$CIRCLE_SHA1 make docker-build
       - snyk/scan:
-          project: '${CIRCLE_PROJECT_REPONAME}/${CIRCLE_BRANCH}-docker'
+          project: '${CIRCLE_PROJECT_REPONAME}'
           docker-image-name: '$AWS_ECR_ACCOUNT_URL/adarga/$CIRCLE_PROJECT_REPONAME:$CIRCLE_SHA1'
           target-file: Dockerfile
           fail-on-issues: true
           monitor-on-build: true
           severity-threshold: high
           organization: adarga
-      - run: IMG=$AWS_ECR_ACCOUNT_URL/adarga/$CIRCLE_PROJECT_REPONAME:$CIRCLE_SHA1 make docker-push
+      - run:
+          name: Docker Push commit tag
+          command: IMG=$AWS_ECR_ACCOUNT_URL/adarga/$CIRCLE_PROJECT_REPONAME:$CIRCLE_SHA1 make docker-push
 
   tag_promote:
     docker:
@@ -50,8 +61,12 @@ jobs:
       - checkout
       - setup_remote_docker:
           version: 20.10.2
-      - run: docker tag $AWS_ECR_ACCOUNT_URL/adarga/$CIRCLE_PROJECT_REPONAME:$CIRCLE_SHA1 $AWS_ECR_ACCOUNT_URL/adarga/$CIRCLE_PROJECT_REPONAME:latest
-      - run: docker push $AWS_ECR_ACCOUNT_URL/adarga/$CIRCLE_PROJECT_REPONAME:latest
+      - run:
+          name: Docker Tag as latest
+          command: docker tag $AWS_ECR_ACCOUNT_URL/adarga/$CIRCLE_PROJECT_REPONAME:$CIRCLE_SHA1 $AWS_ECR_ACCOUNT_URL/adarga/$CIRCLE_PROJECT_REPONAME:latest
+      - run:
+          name: Docker Push latest
+          command: docker push $AWS_ECR_ACCOUNT_URL/adarga/$CIRCLE_PROJECT_REPONAME:latest
 
 workflows:
   version: 2
