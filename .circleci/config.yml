@@ -1,0 +1,91 @@
+version: 2.1
+orbs:
+  sk: wob-adarga/secret-key-orb@1.0.0
+  snyk: snyk/snyk@0.1.0
+
+jobs:
+  test:
+    docker:
+      - image: circleci/golang:1.16
+    working_directory: /go/src/github.com/btrace-baader/kafka-topic-operator
+
+    steps:
+      - checkout
+      - run:
+          name: Run Golang tests
+          command: make test
+      - snyk/scan:
+          project: '${CIRCLE_PROJECT_REPONAME}'
+          additional-arguments: "--remote-repo-url=https://github.com/Adarga-Ltd/kafka-topic-operator"
+          fail-on-issues: true
+          monitor-on-build: true
+          severity-threshold: high
+          organization: adarga
+
+  build:
+    docker:
+      - image: circleci/golang:1.16
+    working_directory: /go/src/github.com/btrace-baader/kafka-topic-operator
+
+    steps:
+      - checkout
+      - setup_remote_docker:
+          version: 20.10.2
+      - run:
+          name: Install AWS CLI
+          command: curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && unzip awscliv2.zip && ./aws/install -i ~/.local/aws-cli -b ~/.local/bin
+      - run:
+          name: Login to ECR
+          command: aws ecr get-login-password | docker login --username AWS --password-stdin $AWS_ECR_ACCOUNT_URL
+      - run:
+          name: Docker Build commit tag
+          command: IMG=$AWS_ECR_ACCOUNT_URL/adarga/$CIRCLE_PROJECT_REPONAME:$CIRCLE_SHA1 make docker-build
+      - snyk/scan:
+          project: '${CIRCLE_PROJECT_REPONAME}'
+          docker-image-name: '$AWS_ECR_ACCOUNT_URL/adarga/$CIRCLE_PROJECT_REPONAME:$CIRCLE_SHA1'
+          target-file: Dockerfile
+          fail-on-issues: true
+          monitor-on-build: true
+          severity-threshold: high
+          organization: adarga
+      - run:
+          name: Docker Push commit tag
+          command: IMG=$AWS_ECR_ACCOUNT_URL/adarga/$CIRCLE_PROJECT_REPONAME:$CIRCLE_SHA1 make docker-push
+
+  tag_promote:
+    docker:
+      - image: circleci/golang:1.16
+    working_directory: /go/src/github.com/Adarga-Ltd/ingst-document-reingestion-job
+
+    steps:
+      - checkout
+      - setup_remote_docker:
+          version: 20.10.2
+      - run:
+          name: Docker Tag as latest
+          command: docker tag $AWS_ECR_ACCOUNT_URL/adarga/$CIRCLE_PROJECT_REPONAME:$CIRCLE_SHA1 $AWS_ECR_ACCOUNT_URL/adarga/$CIRCLE_PROJECT_REPONAME:latest
+      - run:
+          name: Docker Push latest
+          command: docker push $AWS_ECR_ACCOUNT_URL/adarga/$CIRCLE_PROJECT_REPONAME:latest
+
+workflows:
+  version: 2
+  test_build_scan_push:
+    jobs:
+      - test:
+          context:
+            - adarga-global
+            - adarga-operations-ecr
+            # - github-cd
+      - build:
+          context:
+            - adarga-global
+            - adarga-operations-ecr
+            # - github-cd
+      - tag_promote:
+          requires:
+            - build
+          filters:
+            branches:
+              only:
+                - main
