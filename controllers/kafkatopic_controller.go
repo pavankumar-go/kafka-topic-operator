@@ -65,10 +65,10 @@ func (r *KafkaTopicReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, ignoreNotFound(err)
 	}
 
-	// Get credentials config from KafkaConnection
+	// Get kafka connection from config
 	kafkaConnection, err := getKafkaConnection(ctx, r.Client, kafkaTopic.Spec.TargetCluster.Name)
 	if err != nil {
-		return requeueWithError(log, "unable to get KafkaConnection object", err)
+		return requeueWithError(log, "unable to get Kafka Connection", err)
 	}
 
 	kclient := &topic.KafkaClient{}

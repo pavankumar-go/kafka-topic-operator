@@ -5,6 +5,15 @@ generatorOptions:
   disableNameSuffixHash: true
 
 configMapGenerator:
-- name: manager-config
-  files:
+- files:
   - controller_manager_config.yaml
+  name: manager-config
+- files:
+  - kafka_connections_config.yaml
+  name: kafka-connections-config
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+images:
+- name: btrace/kafka-topic-operator:latest
+  newName: pavankumar6/kafka-topic-operator
+  newTag: v1.0.4

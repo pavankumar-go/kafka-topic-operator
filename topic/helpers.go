@@ -3,10 +3,11 @@ package topic
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"github.com/Shopify/sarama"
-	"github.com/btrace-baader/kafka-topic-operator/api/v1alpha1"
 	"io/ioutil"
 	"strconv"
+
+	"github.com/Shopify/sarama"
+	"github.com/btrace-baader/kafka-topic-operator/api/v1alpha1"
 )
 
 func (client *KafkaClient) connectionConfig(kc *v1alpha1.KafkaConnection) *sarama.Config {
@@ -47,7 +48,7 @@ func (client *KafkaClient) tlsConfig() *tls.Config {
 }
 
 func stringToStringPointerMap(in map[string]string) map[string]*string {
-	out := make(map[string]*string, 0)
+	out := make(map[string]*string)
 	for k, v := range in {
 		out[k] = stringPointer(v)
 	}

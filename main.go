@@ -88,19 +88,7 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "KafkaTopic")
 		os.Exit(1)
 	}
-	if err = (&controllers.KafkaConnectionReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("KafkaConnection"),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "KafkaConnection")
-		os.Exit(1)
-	}
 
-	if err = (&kafkav1alpha1.KafkaConnection{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "KafkaConnection")
-		os.Exit(1)
-	}
 	if err = (&kafkav1alpha1.KafkaTopic{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create webhook", "webhook", "KafkaTopic")
 		os.Exit(1)
@@ -113,6 +101,12 @@ func main() {
 	}
 	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up ready check")
+		os.Exit(1)
+	}
+
+	setupLog.Info("loading kafka connections config")
+	if err := controllers.LoadConfig(); err != nil {
+		setupLog.Error(err, "unable to load kafka connection config")
 		os.Exit(1)
 	}
 

@@ -1,0 +1,16 @@
+kafka-qa-cluster:
+  brokers:
+  - "kafka-cp-kafka-headless.test-topic-operator:9092"
+  security-protocol: "PLAINTEXT"
+
+kafka-dev-cluster:
+  brokers:
+  - "kafka-cp-kafka-headless.test-topic-operator:9092"
+  security-protocol: "PLAINTEXT"
+  
+kafka-stage-cluster:
+  brokers:
+  - "kafka-cp-kafka-headless.test-topic-operator:9092"
+  security-protocol: "SASL_SSL"
+  username: "user-1"
+  password: "weakP0ssw@rd"

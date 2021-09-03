@@ -1,8 +1,9 @@
 package controllers
 
 import (
-	. "github.com/smartystreets/goconvey/convey"
 	"testing"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestContainsString(t *testing.T) {

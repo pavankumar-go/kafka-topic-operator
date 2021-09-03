@@ -8,8 +8,9 @@ require (
 	github.com/go-logr/stdr v0.4.0
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.13.0
-	github.com/sirupsen/logrus v1.8.1
+	github.com/prometheus/common v0.26.0
 	github.com/smartystreets/goconvey v1.6.4
+	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.21.2
 	k8s.io/apimachinery v0.21.2
 	k8s.io/client-go v0.21.2

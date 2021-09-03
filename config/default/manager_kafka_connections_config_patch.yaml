@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: controller-manager
+  namespace: system
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        env:
+        - name: KAFKA_CONNECTION_CONFIG_PATH
+          value: "/kafka_connections_config.yaml"
+        volumeMounts:
+        - name: kafka-connections-config
+          mountPath: /kafka_connections_config.yaml
+          subPath: kafka_connections_config.yaml
+      volumes:
+      - name: kafka-connections-config
+        configMap:
+          name: kafka-connections-config

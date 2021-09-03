@@ -1,0 +1,8 @@
+apiVersion: kafka.btrace.com/v1alpha1
+kind: KafkaConnection
+metadata:
+ name: kafka-cp-kafka
+spec:
+    brokers: 
+    - "kafka-cp-kafka-headless.test-topic-operator:9092"
+    security-protocol: "PLAINTEXT"

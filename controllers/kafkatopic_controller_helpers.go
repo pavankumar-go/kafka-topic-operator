@@ -2,6 +2,8 @@ package controllers
 
 import (
 	"context"
+	"errors"
+
 	"github.com/btrace-baader/kafka-topic-operator/kube"
 	"github.com/btrace-baader/kafka-topic-operator/topic"
 	"github.com/go-logr/logr"
@@ -109,10 +111,16 @@ func (r *KafkaTopicReconciler) checkAndRunFinalizers(log logr.Logger, ctx contex
 
 func getKafkaConnection(ctx context.Context, client client.Client, clusterName string) (*kafkav1alpha1.KafkaConnection, error) {
 	cluster := &kafkav1alpha1.KafkaConnection{}
-	err := client.Get(ctx, types.NamespacedName{Name: clusterName}, cluster)
-	if err != nil {
-		return cluster, err
+	kc := getKafkaConnectionConfig()
+	if _, ok := kc[clusterName]; !ok {
+		return nil, errors.New("target kafka cluster not present: " + clusterName)
 	}
+
+	cluster.Spec.Brokers = kc[clusterName].Brokers
+	cluster.Spec.SecurityProtocol = kc[clusterName].SecurityProtocol
+	cluster.Spec.Username = kc[clusterName].Username
+	cluster.Spec.Password = kc[clusterName].Password
+
 	return cluster, nil
 }
 
